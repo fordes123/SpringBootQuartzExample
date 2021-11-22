@@ -1,0 +1,68 @@
+server:
+  port: 8849
+
+spring:
+  application:
+    name: spring-boot-quartz-example
+  profiles:
+    active: prod
+  autoconfigure: #排除druid自动配置，由dynamic-datasource管理
+    exclude: com.alibaba.druid.spring.boot.autoconfigure.DruidDataSourceAutoConfigure
+  datasource:
+    dynamic:
+      primary: business #默认数据源
+      strict: true #严格匹配数据源
+      datasource:
+        business:
+          url: jdbc:mysql://localhost:3306/business?serverTimezone=UTC
+          username: dev
+          password: 12345678
+        quartz:
+          url: jdbc:mysql://localhost:3306/quartz?serverTimezone=UTC
+          username: dev
+          password: 12345678
+  quartz:
+    auto-startup: true #自启动
+    job-store-type: jdbc #持久化方式
+    wait-for-jobs-to-complete-on-shutdown: true #程序结束时等待quartz相关内容结束
+    overwrite-existing-jobs: true #启动时更新己存在的Job
+    properties:
+      org:
+        quartz:
+          #调度配置
+          scheduler:
+            instanceName: Scheduler #调度器实例名称
+            instanceId: AUTO #调度器实例编号自动生成
+            wrapJobExecutionInUserTransaction: false #是否在Quartz执行一个job前使用UserTransaction
+          #线程池配置
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool #线程池的实现类
+            threadCount: 10 #线程池中的线程数量
+            threadPriority: 5 #线程优先级
+            threadsInheritContextClassLoaderOfInitializingThread: true #配置是否启动自动加载数据库内的定时任务，默认true
+            makeThreadsDaemons: false  #是否设置为守护线程
+          #持久化方式配置
+          jobStore:
+            useProperties: false #JobDataMaps是否都为String类型
+            tablePrefix: QRTZ_ #数据表的前缀
+            misfireThreshold: 60000 #最大能忍受的触发超时时间
+            isClustered: true #是否以集群方式运行
+            clusterCheckinInterval: 2000 #调度实例失效的检查时间间隔，单位毫秒
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX #数据保存方式为数据库持久化
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate #数据库代理类
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: org.fordes.subview.model.entity
+  configuration:
+    map-underscore-to-camel-case: false
+    cache-enabled: false
+  global-config:
+    banner: off
+    db-config:
+      update-strategy: not_null
+
+logging:
+  config: classpath:logback/logback-spring.xml
+  file:
+    path: ./logs
